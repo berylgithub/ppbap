@@ -52,16 +52,209 @@ def y_data_processor(path):
     df_idx["log_y"] = logys
     return df_idx
 
+def protein_interaction(df_protein_A, df_protein_B, atom_types, cutoff):
+    '''
+    calculate the combination of euclidian distance and heaviside step between chains in a protein, 
+    e.g chains=[A,B,C,D], hence the interactions are: [[A-B],[A-C],[A-D],[B-C],[B-D],[C-D]]
+    
+    'atom_types' are the type of atoms used for calculation
+    'cutoff' is the distance cutoff between atoms for heaviside step function (in Angstrom)
+    '''
+    type_len = len(atom_types)
+    x_vector = np.zeros(type_len**2)
+    idx = 0
+    for a_type in atom_types:
+        for b_type in atom_types:
+            #calculate the interaction of each atoms:
+            sum_interaction = 0
+            a_atoms = df_protein_A.loc[df_protein_A['atom_type'] == a_type]
+            b_atoms = df_protein_B.loc[df_protein_B['atom_type'] == b_type]
+            for i in range(a_atoms.shape[0]):
+                for j in range(b_atoms.shape[0]):
+                    #get the (x,y,z):
+                    a_atom = a_atoms.iloc[i]
+                    b_atom = b_atoms.iloc[j]
+                    a_coord = np.array([float(a_atom['x_coor']), float(a_atom['y_coor']), float(a_atom['z_coor'])]) 
+                    b_coord = np.array([float(b_atom['x_coor']), float(b_atom['y_coor']), float(b_atom['z_coor'])])
+                    #calculate the euclidean distance and heaviside step value:
+                    sum_interaction += f_h_step(x=f_euclid_dist(a_coord, b_coord), a=cutoff) 
+            x_vector[idx] = sum_interaction
+            idx+=1
+            print(x_vector)
+    return x_vector
+
+def data_processing(path,id_name, atom_types, cutoff):
+    #dataframe loader:
+    path_file = path+'/'+id_name
+    l =[]
+    with open(path_file, 'r') as f:
+        for line in f:
+            if line.startswith('ATOM') or line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
+                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+                if len(clean_line) == 11:
+                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+                    clean_line[-2] = split[1]
+                    clean_line.insert(-2, split[0])
+                l.append(clean_line)
+    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
+    
+    #dataframe splitter:
+    l_df = []
+    last_idx = 0
+    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+        l_df.append(df_atoms.iloc[last_idx:idx])
+        last_idx = idx+1
+        
+    #vector calculation:
+    x_vector = np.zeros(len(atom_types)**2)
+    length = len(l_df)
+    for i in range(length):
+        for j in range(length):
+            if j>i:
+                #sum each chain interaction values:
+                print('protein chain :', i, j)
+                x_vector += protein_interaction(l_df[i], l_df[j], atom_types, cutoff)
+    return {'id':id_name, 'x_vector':x_vector}
+
+
+###########################################
+'''
+multiprocessing functions
+'''
+def f_euc_mp(params):
+    return np.linalg.norm(params[0]-params[1])
+
+def f_heaviside_mp(params):
+    return 1 if(params[0]<=params[1]) else 0
+
+def protein_interaction_mp(df_protein_A, df_protein_B, atom_types, cutoff, pool):
+    type_len = len(atom_types)
+    x_vector = np.zeros(type_len**2)
+    idx = 0
+    for a_type in atom_types:
+        for b_type in atom_types:
+            #calculate the interaction of each atoms:
+            sum_interaction = 0
+            a_atoms = df_protein_A.loc[df_protein_A['atom_type'] == a_type].to_dict('records')
+            b_atoms = df_protein_B.loc[df_protein_B['atom_type'] == b_type].to_dict('records')
+            a_coords = np.array([[a_atom['x_coor'], a_atom['y_coor'], a_atom['z_coor']] for a_atom in a_atoms], dtype=float)
+            b_coords = np.array([[b_atom['x_coor'], b_atom['y_coor'], b_atom['z_coor']] for b_atom in b_atoms], dtype=float) 
+            paramlist = list(itertools.product(a_coords, b_coords))
+            euclid_dists = pool.map(f_euc_mp, paramlist)
+            euclid_dists = np.array(list(euclid_dists))            
+            paramlist = list(itertools.product(euclid_dists, [cutoff]))
+            heavisides = pool.map(f_heaviside_mp, paramlist)
+            heavisides = np.array(list(heavisides))
+            sum_interaction = np.sum(heavisides)
+            x_vector[idx] = sum_interaction
+            idx+=1
+            print(x_vector)
+    return x_vector
+
+def data_multi_processing(path,id_name, atom_types, cutoff, pool):
+    #dataframe loader:
+    path_file = path+'/'+id_name
+    l =[]
+    with open(path_file, 'r') as f:
+        for line in f:
+            if line.startswith('ATOM') or line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
+                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+                if len(clean_line) == 11:
+                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+                    clean_line[-2] = split[1]
+                    clean_line.insert(-2, split[0])
+                l.append(clean_line)
+    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
+    
+    #dataframe splitter:
+    l_df = []
+    last_idx = 0
+    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+        l_df.append(df_atoms.iloc[last_idx:idx])
+        last_idx = idx+1
+        
+    #vector calculation:
+    x_vector = np.zeros(len(atom_types)**2)
+    length = len(l_df)
+    for i in range(length):
+        for j in range(length):
+            if j>i:
+                #sum each chain interaction values:
+                print('protein chain :', i, j)
+                x_vector += protein_interaction_mp(l_df[i], l_df[j], atom_types, cutoff, pool)
+    return {'id':id_name, 'x_vector':x_vector}
+
+def data_multi_processing_mp(params):
+    #dataframe loader:
+    path_file = params[0]+'/'+params[1]
+    l =[]
+    with open(path_file, 'r') as f:
+        for line in f:
+            if line.startswith('ATOM') or line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
+                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+                if len(clean_line) == 11:
+                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+                    clean_line[-2] = split[1]
+                    clean_line.insert(-2, split[0])
+                l.append(clean_line)
+    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
+    
+    #dataframe splitter:
+    l_df = []
+    last_idx = 0
+    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+        l_df.append(df_atoms.iloc[last_idx:idx])
+        last_idx = idx+1
+        
+    #vector calculation:
+    x_vector = np.zeros(len(params[2])**2)
+    length = len(l_df)
+    for i in range(length):
+        for j in range(length):
+            if j>i:
+                #sum each chain interaction values:
+                print('protein chain :', i, j)
+                x_vector += protein_interaction_mp(l_df[i], l_df[j], params[2], params[3], params[4])
+    return {'id':params[1], 'x_vector':x_vector}
 
 if __name__ == '__main__':
-    '''
-    y data processor:
-    '''
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018'
-    df_idx = y_data_processor(path)
-    print(df_idx.loc[9])
-    print(len(df_idx))
     
+    def unit_test_data_processing():
+        '''
+        data processing unit test
+        '''
+        path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+        id_file = complex_files[2]
+        atom_types = ['C','N','O','F','P','S','Cl','Br','I']
+        cutoff = 12
+        
+        print(complex_files)
+        curr_time = time.time()
+        x_vector = data_processing(path, id_file, atom_types, cutoff)
+        print('value of x vector (R^N) = ', x_vector)
+        end_time = time.time()
+        print('time elapsed =',end_time-curr_time,'seconds')
+        
+    
+    
+    def unit_test_y_data():
+        '''
+        y data processor:
+        '''
+        path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018'
+        df_idx = y_data_processor(path)
+        print(df_idx.loc[9])
+        print(len(df_idx))
+        
+        
+    def testprint():
+        print(s)
     '''
     files loader:
     '''
@@ -90,13 +283,78 @@ if __name__ == '__main__':
                 l.append(clean_line)
     df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
     
-    '''
-    print(len(l[2314]))
-    spl = [l[2314][-2][:4], l[2314][-2][4:]]
-    l[2314][-2] = spl[1]
-    l[2314].insert(-2, spl[0])
-    l[2314].insert(-2, l[2314][-2][4:])
-    print(l[2314])
-    '''
+
     print(l[2241])
     print(df_atoms)
+    
+    '''
+    split dataframes based on chains ended by "TER"
+    '''
+    l_df = []
+    last_idx = 0
+    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+        l_df.append(df_atoms.iloc[last_idx:idx])
+        last_idx = idx+1
+    
+    print(df_atoms.index[df_atoms['record'] == 'TER'].tolist())
+    print(l_df)
+    
+    '''
+    multiprocessing unit test
+    '''
+#    a = l_df[0].loc[l_df[0]['atom_type'] == 'C'].to_dict('records')
+#    b = l_df[1].loc[l_df[1]['atom_type'] == 'C'].to_dict('records')
+#    a_c = np.array([[a_['x_coor'], a_['y_coor'], a_['z_coor']] for a_ in a], dtype=float)
+#    b_c = np.array([[b_['x_coor'], b_['y_coor'], b_['z_coor']] for b_ in b], dtype=float)
+#    paramlist = list(itertools.product(a_c, b_c))
+#    cutoff=12
+#    pool = multiprocessing.Pool()
+#
+#    start_time = time.time()
+#    for i in range(5):
+#        euclid_dists = pool.map(f_euc_mp, paramlist)
+#        euclid_dists = np.array(list(euclid_dists))
+#        print(euclid_dists.shape, euclid_dists[0:100])
+#        
+#        params = list(itertools.product(euclid_dists, [cutoff]))
+#        #print(params)
+#        heavisides = pool.map(f_heaviside_mp, params)
+#        heavisides = np.array(list(heavisides))
+#        print(heavisides.shape, heavisides[0:100])
+#        print(np.sum(heavisides))
+#    end_time = time.time()
+#    print('time elapsed =',end_time-start_time,'seconds')
+    #parameters:
+    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+    id_file = complex_files[2]
+    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
+    cutoff = 12
+    
+    id_file = '2wy2.ent.pdb'
+    print(test_file)
+    #process:
+    start_time = time.time()
+    pool = multiprocessing.Pool()
+    
+    x_vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
+    print('value of x vector (R^N) = ', x_vector)
+
+    
+#    paramlist = list(itertools.product([path], complex_files, [atom_types], [cutoff], [pool]))
+#    sample_params = paramlist[0:3]
+#    print(sample_params)
+#    x_vector = map(data_multi_processing_mp, sample_params)
+#    x_vector = np.array(list(x_vector))
+#    print('value of x vector (R^N) = ', x_vector)
+#    
+    
+#    x_vector = map(data_multi_processing, itertools.repeat(path), complex_files[0:3], itertools.repeat(atom_types), itertools.repeat(cutoff), itertools.repeat(pool))
+    
+#    for i in range(4):
+#        x_vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
+#        print('value of x vector (R^N) = ', x_vector)
+    end_time = time.time()
+    
+    print('time elapsed =',end_time-start_time,'seconds')
+    
+    #unit_test_data_processing()
