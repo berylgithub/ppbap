@@ -11,7 +11,7 @@ import sys, os
 import time
 import multiprocessing
 import itertools
-
+import pickle
 
 '''
 math functions
@@ -28,7 +28,6 @@ def y_data_processor(path):
     '''
     Create dataframes of log_10^y
     '''
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018'
     mol_units = {'uM':1.e-6, 'pM':1.e-12, 'fM':1.e-15, 'nM':1.e-9, 'mM':1.e-3}
     
     #load the index file
@@ -98,6 +97,8 @@ def data_processing(path,id_name, atom_types, cutoff):
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
                 l.append(clean_line)
+            elif line.startswith('ENDMDL'):
+                break
     df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
     
     #dataframe splitter:
@@ -168,6 +169,8 @@ def data_multi_processing(path,id_name, atom_types, cutoff, pool):
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
                 l.append(clean_line)
+            elif line.startswith('ENDMDL'):
+                break
     df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
     
     #dataframe splitter:
@@ -203,6 +206,8 @@ def data_multi_processing_mp(params):
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
                 l.append(clean_line)
+            elif line.startswith('ENDMDL'):
+                break
     df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
     
     #dataframe splitter:
@@ -234,7 +239,6 @@ if __name__ == '__main__':
         atom_types = ['C','N','O','F','P','S','Cl','Br','I']
         cutoff = 12
         
-        print(complex_files)
         curr_time = time.time()
         x_vector = data_processing(path, id_file, atom_types, cutoff)
         print('value of x vector (R^N) = ', x_vector)
@@ -253,108 +257,163 @@ if __name__ == '__main__':
         print(len(df_idx))
         
         
-    def testprint():
-        print(s)
-    '''
-    files loader:
-    '''
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
-    
-    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    print(len(complex_files))
-    
-    test_file = path+'/'+complex_files[2]
-    print(test_file)
-    
-    '''
-    atom dataframe generator:
-    '''
-    l =[]
-    with open(test_file, 'r') as f:
-        for line in f:
-            if line.startswith('ATOM') or line.startswith('TER'):
-                clean_line = (line.rstrip()).split()
-                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
-                if len(clean_line) == 11:
-                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
-                    split = [clean_line[-2][:4], clean_line[-2][4:]]
-                    clean_line[-2] = split[1]
-                    clean_line.insert(-2, split[0])
-                l.append(clean_line)
-    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
-    
 
-    print(l[2241])
-    print(df_atoms)
-    
-    '''
-    split dataframes based on chains ended by "TER"
-    '''
-    l_df = []
-    last_idx = 0
-    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
-        l_df.append(df_atoms.iloc[last_idx:idx])
-        last_idx = idx+1
-    
-    print(df_atoms.index[df_atoms['record'] == 'TER'].tolist())
-    print(l_df)
+#    '''
+#    files loader:
+#    '''
+#    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+#    
+#    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+#    print(len(complex_files))
+#    
+##    test_file = path+'/'+complex_files[2]
+#    test_file = path+'/2wy2.ent.pdb'
+#    print(test_file)
+#    
+#    '''
+#    atom dataframe generator:
+#    '''
+#    l =[]
+#    with open(test_file, 'r') as f:
+#        for line in f:
+#            if line.startswith('ATOM') or line.startswith('TER'):
+#                clean_line = (line.rstrip()).split()
+#                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+#                if len(clean_line) == 11:
+#                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+#                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+#                    clean_line[-2] = split[1]
+#                    clean_line.insert(-2, split[0])
+#                l.append(clean_line)
+#            elif line.startswith('ENDMDL'):
+#                break
+#    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
+#    
+#
+#    print(df_atoms)
+#    
+#    '''
+#    split dataframes based on chains ended by "TER"
+#    '''
+#    l_df = []
+#    last_idx = 0
+#    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+#        l_df.append(df_atoms.iloc[last_idx:idx])
+#        last_idx = idx+1
+#    
+#    print(df_atoms.index[df_atoms['record'] == 'TER'].tolist())
+#    print(l_df)
     
     '''
     multiprocessing unit test
     '''
-#    a = l_df[0].loc[l_df[0]['atom_type'] == 'C'].to_dict('records')
-#    b = l_df[1].loc[l_df[1]['atom_type'] == 'C'].to_dict('records')
-#    a_c = np.array([[a_['x_coor'], a_['y_coor'], a_['z_coor']] for a_ in a], dtype=float)
-#    b_c = np.array([[b_['x_coor'], b_['y_coor'], b_['z_coor']] for b_ in b], dtype=float)
-#    paramlist = list(itertools.product(a_c, b_c))
-#    cutoff=12
-#    pool = multiprocessing.Pool()
-#
+#    #parameters:
+#    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+#    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
+#    cutoff = 12
+#    id_file = '2wy2.ent.pdb'
+#    complexes = complex_files[0:3]
+# 
+#    #process:
 #    start_time = time.time()
-#    for i in range(5):
-#        euclid_dists = pool.map(f_euc_mp, paramlist)
-#        euclid_dists = np.array(list(euclid_dists))
-#        print(euclid_dists.shape, euclid_dists[0:100])
-#        
-#        params = list(itertools.product(euclid_dists, [cutoff]))
-#        #print(params)
-#        heavisides = pool.map(f_heaviside_mp, params)
-#        heavisides = np.array(list(heavisides))
-#        print(heavisides.shape, heavisides[0:100])
-#        print(np.sum(heavisides))
-#    end_time = time.time()
-#    print('time elapsed =',end_time-start_time,'seconds')
-    #parameters:
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
-    id_file = complex_files[2]
-    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
-    cutoff = 12
-    
-    id_file = '2wy2.ent.pdb'
-    print(test_file)
-    #process:
-    start_time = time.time()
-    pool = multiprocessing.Pool()
-    
-    x_vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
-    print('value of x vector (R^N) = ', x_vector)
+#    pool = multiprocessing.Pool()
+#    
+#    x_vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
+#    print('value of x vector (R^N) = ', x_vector)
 
-    
+    '''
+    using map
+    '''
 #    paramlist = list(itertools.product([path], complex_files, [atom_types], [cutoff], [pool]))
 #    sample_params = paramlist[0:3]
 #    print(sample_params)
 #    x_vector = map(data_multi_processing_mp, sample_params)
 #    x_vector = np.array(list(x_vector))
 #    print('value of x vector (R^N) = ', x_vector)
-#    
     
-#    x_vector = map(data_multi_processing, itertools.repeat(path), complex_files[0:3], itertools.repeat(atom_types), itertools.repeat(cutoff), itertools.repeat(pool))
-    
-#    for i in range(4):
+    '''
+    using for-loop
+    '''
+#    for id_file in sample_complex:
 #        x_vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
 #        print('value of x vector (R^N) = ', x_vector)
+#        with open(filename, 'ab') as f:
+#            pickle.dump(x_vector, f)
+            
+    
+#    end_time = time.time()
+#    print('time elapsed =',end_time-start_time,'seconds')
+
+
+    '''
+    data processing & writing
+    '''
+    #initialize parameters
+    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    
+    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
+    cutoff = 12
+    complexes = complex_files
+    filename = "dataset.pkl"
+    
+    #start of the process
+    start_time = time.time()
+    pool = multiprocessing.Pool()
+    
+    #y_data loader
+    df_y = y_data_processor('C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018')
+
+    #check if id is already existed within file, if yes, skip it
+    data = []
+    try:
+        with open(filename, 'rb') as fr:
+            print(filename, 'is found')
+            try:
+                while True:
+                    data.append(pickle.load(fr))
+            except EOFError:
+                pass            
+    except FileNotFoundError:
+        print('File is not found')
+    saved_ids = [d['id'] for d in data]
+
+    #process and save the data
+    try:
+        i=0
+        for id_file in complexes:
+            if id_file in saved_ids:
+                continue
+            else:
+                vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
+                y = df_y.loc[df_y['id']==id_file.split('.')[0]]['log_y'].values[0]
+                vector["y"]=y
+                print("ID : ", id_file)
+                print('value of x vector (R^N) = ', vector)
+                with open(filename, 'ab') as f:
+                    pickle.dump(vector, f)
+                i+=1
+    except KeyboardInterrupt:
+        print('interrupted !!')
+    
     end_time = time.time()
-    
+    print("the number of protein processed in current run = ",i)
     print('time elapsed =',end_time-start_time,'seconds')
+            
     
-    #unit_test_data_processing()
+    '''
+    data checker
+    '''
+    data = []
+    try:
+        with open(filename, 'rb') as fr:
+            try:
+                while True:
+                    data.append(pickle.load(fr))
+            except EOFError:
+                pass            
+    except FileNotFoundError:
+        print('File is not found')
+    saved_ids = [d['id'] for d in data]
+    print('processed protein IDs = ',saved_ids)
+    
