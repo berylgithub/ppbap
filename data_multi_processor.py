@@ -88,7 +88,7 @@ def data_processing(path,id_name, atom_types, cutoff):
     l =[]
     with open(path_file, 'r') as f:
         for line in f:
-            if line.startswith('ATOM') or line.startswith('TER'):
+            if line.startswith('ATOM'):
                 clean_line = (line.rstrip()).split()
                 #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
                 if len(clean_line) == 11:
@@ -96,6 +96,16 @@ def data_processing(path,id_name, atom_types, cutoff):
                     split = [clean_line[-2][:4], clean_line[-2][4:]]
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
+                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+                if len(clean_line[6])>=13:
+                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(6, split[0])
+                    clean_line[7] = split[1]
+                l.append(clean_line)
+            elif line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
                 l.append(clean_line)
             elif line.startswith('ENDMDL'):
                 break
@@ -160,7 +170,7 @@ def data_multi_processing(path,id_name, atom_types, cutoff, pool):
     l =[]
     with open(path_file, 'r') as f:
         for line in f:
-            if line.startswith('ATOM') or line.startswith('TER'):
+            if line.startswith('ATOM'):
                 clean_line = (line.rstrip()).split()
                 #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
                 if len(clean_line) == 11:
@@ -168,6 +178,16 @@ def data_multi_processing(path,id_name, atom_types, cutoff, pool):
                     split = [clean_line[-2][:4], clean_line[-2][4:]]
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
+                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+                if len(clean_line[6])>=13:
+                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(6, split[0])
+                    clean_line[7] = split[1]
+                l.append(clean_line)
+            elif line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
                 l.append(clean_line)
             elif line.startswith('ENDMDL'):
                 break
@@ -197,7 +217,7 @@ def data_multi_processing_mp(params):
     l =[]
     with open(path_file, 'r') as f:
         for line in f:
-            if line.startswith('ATOM') or line.startswith('TER'):
+            if line.startswith('ATOM'):
                 clean_line = (line.rstrip()).split()
                 #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
                 if len(clean_line) == 11:
@@ -205,6 +225,16 @@ def data_multi_processing_mp(params):
                     split = [clean_line[-2][:4], clean_line[-2][4:]]
                     clean_line[-2] = split[1]
                     clean_line.insert(-2, split[0])
+                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+                if len(clean_line[6])>=13:
+                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(6, split[0])
+                    clean_line[7] = split[1]
+                l.append(clean_line)
+            elif line.startswith('TER'):
+                clean_line = (line.rstrip()).split()
                 l.append(clean_line)
             elif line.startswith('ENDMDL'):
                 break
@@ -267,7 +297,7 @@ if __name__ == '__main__':
 #    print(len(complex_files))
 #    
 ##    test_file = path+'/'+complex_files[2]
-#    test_file = path+'/2wy2.ent.pdb'
+#    test_file = path+'/1f5r.ent.pdb'
 #    print(test_file)
 #    
 #    '''
@@ -276,7 +306,7 @@ if __name__ == '__main__':
 #    l =[]
 #    with open(test_file, 'r') as f:
 #        for line in f:
-#            if line.startswith('ATOM') or line.startswith('TER'):
+#            if line.startswith('ATOM'):
 #                clean_line = (line.rstrip()).split()
 #                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
 #                if len(clean_line) == 11:
@@ -284,12 +314,25 @@ if __name__ == '__main__':
 #                    split = [clean_line[-2][:4], clean_line[-2][4:]]
 #                    clean_line[-2] = split[1]
 #                    clean_line.insert(-2, split[0])
+#                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+#                if len(clean_line[6])>=13:
+#                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(6, split[0])
+#                    clean_line[7] = split[1]
+#                l.append(clean_line)
+#            elif line.startswith('TER'):
+#                clean_line = (line.rstrip()).split()
 #                l.append(clean_line)
 #            elif line.startswith('ENDMDL'):
 #                break
 #    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
-#    
-#
+#    for i in range(len(l)):
+#        print(i, l[i])
+#        
+#    print(l[2013])
+#    print(len(l[293][6].split('-')))
 #    print(df_atoms)
 #    
 #    '''
@@ -303,7 +346,8 @@ if __name__ == '__main__':
 #    
 #    print(df_atoms.index[df_atoms['record'] == 'TER'].tolist())
 #    print(l_df)
-    
+#    
+#    print(df_atoms.iloc[293])
     '''
     multiprocessing unit test
     '''
@@ -351,6 +395,7 @@ if __name__ == '__main__':
     #initialize parameters
     path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
     complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    #print(complex_files)
     
     atom_types = ['C','N','O','F','P','S','Cl','Br','I']
     cutoff = 12
@@ -415,5 +460,5 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print('File is not found')
     saved_ids = [d['id'] for d in data]
-    print('processed protein IDs = ',saved_ids)
+    print('processed protein IDs = ',saved_ids, print(len(saved_ids)))
     
