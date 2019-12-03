@@ -103,6 +103,12 @@ def data_processing(path,id_name, atom_types, cutoff):
                     clean_line[-1] = last_elem
                     clean_line.insert(6, split[0])
                     clean_line[7] = split[1]
+                if len(clean_line[7])>=13:
+                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(7, split[0])
+                    clean_line[8] = split[1]
                 l.append(clean_line)
             elif line.startswith('TER'):
                 clean_line = (line.rstrip()).split()
@@ -185,6 +191,12 @@ def data_multi_processing(path,id_name, atom_types, cutoff, pool):
                     clean_line[-1] = last_elem
                     clean_line.insert(6, split[0])
                     clean_line[7] = split[1]
+                if len(clean_line[7])>=13:
+                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(7, split[0])
+                    clean_line[8] = split[1]
                 l.append(clean_line)
             elif line.startswith('TER'):
                 clean_line = (line.rstrip()).split()
@@ -232,6 +244,12 @@ def data_multi_processing_mp(params):
                     clean_line[-1] = last_elem
                     clean_line.insert(6, split[0])
                     clean_line[7] = split[1]
+                if len(clean_line[7])>=13:
+                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+                    last_elem = clean_line.pop()
+                    clean_line[-1] = last_elem
+                    clean_line.insert(7, split[0])
+                    clean_line[8] = split[1]
                 l.append(clean_line)
             elif line.startswith('TER'):
                 clean_line = (line.rstrip()).split()
@@ -297,7 +315,7 @@ if __name__ == '__main__':
 #    print(len(complex_files))
 #    
 ##    test_file = path+'/'+complex_files[2]
-#    test_file = path+'/1f5r.ent.pdb'
+#    test_file = path+'/1nez.ent.pdb'
 #    print(test_file)
 #    
 #    '''
@@ -321,6 +339,12 @@ if __name__ == '__main__':
 #                    clean_line[-1] = last_elem
 #                    clean_line.insert(6, split[0])
 #                    clean_line[7] = split[1]
+#                if len(clean_line[7])>=13:
+#                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(7, split[0])
+#                    clean_line[8] = split[1]
 #                l.append(clean_line)
 #            elif line.startswith('TER'):
 #                clean_line = (line.rstrip()).split()
