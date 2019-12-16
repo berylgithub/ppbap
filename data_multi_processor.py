@@ -423,7 +423,7 @@ if __name__ == '__main__':
     
     atom_types = ['C','N','O','F','P','S','Cl','Br','I']
     cutoff = 12
-    complexes = complex_files
+    complexes = complex_files[::-1]
     filename = "dataset.pkl"
     
     #start of the process
@@ -454,6 +454,7 @@ if __name__ == '__main__':
             if id_file in saved_ids:
                 continue
             else:
+                print("start of process for ID :",id_file)
                 vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
                 y = df_y.loc[df_y['id']==id_file.split('.')[0]]['log_y'].values[0]
                 vector["y"]=y
