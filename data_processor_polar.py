@@ -47,7 +47,7 @@ def hydrophobic_acid_patch_interactions(paramlist):
                     clean_line[4] = split[0]
                     clean_line.insert(5, split[1])
                 #check if coordinate data collumns are collided (most likely happens between x and y coor)
-                if len(clean_line[6])>=13:
+                while len(clean_line[6])>=13:
                     split = [clean_line[6][:-8], clean_line[6][-8:]]
                     last_elem = clean_line.pop()
                     clean_line[-1] = last_elem
@@ -149,10 +149,10 @@ if __name__ == '__main__':
     complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     complexes = complex_files
     cutoff = 12
-    
+#    
     filename = 'h_a_vec.pkl'
 
-    pool = multiprocessing.Pool()
+#    pool = multiprocessing.Pool()
     
     #start of the process
     start_time = time.time()
@@ -201,4 +201,42 @@ if __name__ == '__main__':
     data checker
     '''
     data = data_checker.data_load(filename)
-    print(data)
+    print(data, len(data))
+    
+#    id_name = '3s5l.ent.pdb'
+#    path_file = path+'/'+id_name
+#    l =[]
+#    with open(path_file, 'r') as f:
+#        for line in f:
+#            if line.startswith('ATOM'):
+#                clean_line = (line.rstrip()).split()
+#                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+#                if len(clean_line) == 11:
+#                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+#                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+#                    clean_line[-2] = split[1]
+#                    clean_line.insert(-2, split[0])
+#                #check if the chain identifier is misaligned
+#                if len(clean_line[4])>1:
+#                    split = [clean_line[4][0], clean_line[4][1:]]
+#                    clean_line[4] = split[0]
+#                    clean_line.insert(5, split[1])
+#                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+#                while len(clean_line[6])>=13:
+#                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(6, split[0])
+#                    clean_line[7] = split[1]
+#                if len(clean_line[7])>=13:
+#                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(7, split[0])
+#                    clean_line[8] = split[1]
+#                l.append(clean_line)
+#            elif line.startswith('TER'):
+#                clean_line = (line.rstrip()).split()
+#                l.append(clean_line)
+#            elif line.startswith('ENDMDL'):
+#                break
