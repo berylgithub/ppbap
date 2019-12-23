@@ -224,6 +224,9 @@ def data_multi_processing(path,id_name, atom_types, cutoff, pool):
     return {'id':id_name, 'x_vector':x_vector}
 
 def data_multi_processing_mp(params):
+    '''
+    !!!this parser function must be re-checked, many bugs occured due to PDB misalignment
+    '''
     #dataframe loader:
     path_file = params[0]+'/'+params[1]
     l =[]
