@@ -15,29 +15,14 @@ from scipy.stats import pearsonr
 
 import pickle
 import os
-
-def dataset_loader(filepath):
-    data = []
-    try:
-        with open(filepath, 'rb') as fr:
-            try:
-                while True:
-                    data.append(pickle.load(fr))
-            except EOFError:
-                pass            
-    except FileNotFoundError:
-        print('File is not found')
-    saved_ids = [d['id'] for d in data]
-    return data
-
-
-
+import data_checker
 
 if __name__ == '__main__':
     '''
     load and split the dataset
     '''
-    dataset = dataset_loader(os.getcwd()+'/Data/dataset_alpha_121019.pkl')
+    filename = os.getcwd()+'/Data/dataset_ha_alpha_122319.pkl'
+    dataset = data_checker.data_load(filename)
 
     features = np.array([data['x_vector'] for data in dataset])
     labels = np.array([data['y'] for data in dataset])
@@ -57,7 +42,7 @@ if __name__ == '__main__':
 #    '''
 #    model saver
 #    '''
-#    with open(os.getcwd()+"/Model/rf_pp_alpha.pkl", "wb") as f:
+#    with open(os.getcwd()+"/Model/rf_pp_ha_alpha.pkl", "wb") as f:
 #        pickle.dump(rf, f)
 #    
 #    
@@ -147,7 +132,7 @@ if __name__ == '__main__':
         kfolds = sorted(kfolds, key=lambda k: k['pcc_test'], reverse=True) 
         print(kfolds[0]['k'], kfolds[0]['pcc_test'])
         #save best model
-        with open(os.getcwd()+"/Model/rf_pp_a_"+str(n)+"fold_best.pkl", "wb") as f:
+        with open(os.getcwd()+"/Model/rf_pp_ha_a_"+str(n)+"fold_best.pkl", "wb") as f:
             pickle.dump(kfolds[0], f)
         
 #    '''
