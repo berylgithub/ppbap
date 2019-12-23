@@ -49,8 +49,8 @@ def hydrophobic_acid_patch_interactions(paramlist):
                 #check if coordinate data collumns are collided (most likely happens between x and y coor)
                 while len(clean_line[6])>=13:
                     split = [clean_line[6][:-8], clean_line[6][-8:]]
-                    last_elem = clean_line.pop()
-                    clean_line[-1] = last_elem
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
                     clean_line.insert(6, split[0])
                     clean_line[7] = split[1]
                 if len(clean_line[7])>=13:
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     data = data_checker.data_load(filename)
     print(data, len(data))
     
-#    id_name = '3s5l.ent.pdb'
+#    id_name = '4gxu.ent.pdb'
 #    path_file = path+'/'+id_name
 #    l =[]
 #    with open(path_file, 'r') as f:
@@ -224,8 +224,8 @@ if __name__ == '__main__':
 #                #check if coordinate data collumns are collided (most likely happens between x and y coor)
 #                while len(clean_line[6])>=13:
 #                    split = [clean_line[6][:-8], clean_line[6][-8:]]
-#                    last_elem = clean_line.pop()
-#                    clean_line[-1] = last_elem
+##                    last_elem = clean_line.pop()
+##                    clean_line[-1] = last_elem
 #                    clean_line.insert(6, split[0])
 #                    clean_line[7] = split[1]
 #                if len(clean_line[7])>=13:
@@ -240,3 +240,29 @@ if __name__ == '__main__':
 #                l.append(clean_line)
 #            elif line.startswith('ENDMDL'):
 #                break
+#    print(l[34338])
+#    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type', 2:'atom_name', 3:'amino_acid_type'})
+#    
+#    #dataframe splitter:
+#    l_df = []
+#    last_idx = 0
+#    for idx in df_atoms.index[df_atoms['record'] == 'TER'].tolist():
+#        l_df.append(df_atoms.iloc[last_idx:idx])
+#        last_idx = idx+1
+#    
+#    #hydrophobics and acids types of amino acids
+#    hydrophobics = ['ALA','VAL','ILE','LEU','MET','PHE','TYR','TRP']
+#    acids = ['ARG','HIS','LYS','ASP','GLU']
+#    
+#    #select the carbon alpha of atoms based on the amino acid types
+#    hydrophobics_patches = []
+#    for i in range(len(l_df)):
+#        mol_patch=l_df[i].set_index(['amino_acid_type'])
+#        hydrophobics_patches.append(mol_patch.loc[ (mol_patch.index.isin(hydrophobics)) & (mol_patch['atom_name'] == 'CA') ]) 
+#        print(mol_patch.loc[ (mol_patch.index.isin(hydrophobics)) & (mol_patch['atom_name'] == 'CA') ][['x_coor','y_coor','z_coor']])
+#        
+#    acid_patches = []
+#    for i in range(len(l_df)):
+#        mol_patch=l_df[i].set_index(['amino_acid_type'])
+#        acid_patches.append(mol_patch.loc[ (mol_patch.index.isin(acids)) & (mol_patch['atom_name'] == 'CA') ])
+#        print()
