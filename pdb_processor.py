@@ -11,10 +11,8 @@ dedicated file which contain functions to process custom PDB files
 req : biopandas
 """
 
-import pandas as pd
 from biopandas.pdb import PandasPdb
 import os
-import itertools
 
 
 def list_files(root_path):
@@ -96,8 +94,10 @@ if __name__ == '__main__':
     test_file = path+'/complex.1.pdb'
     
     df_atoms = load_custom_pdb(test_file)
-    print(df_atoms["residue_name"])
     terminal_idxes = get_chain_terminals(test_file)
     chains = get_sliced_chains(df_atoms, terminal_idxes, zdock=True)
-    new_chain = chains[0].set_index(["residue_name"])
-    print(new_chain)
+    
+#    new_chain = chains[0].set_index(["residue_name"])
+    chains = loader_zdock(test_file)
+    print(chains)
+    

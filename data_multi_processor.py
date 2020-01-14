@@ -312,54 +312,57 @@ if __name__ == '__main__':
     '''
     files loader:
     '''
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+#    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Outputs/PC-PC/top_preds'
     
     complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     print(len(complex_files))
     
 #    test_file = path+'/'+complex_files[2]
-    test_file = path+'/1nez.ent.pdb'
+#    test_file = path+'/1nez.ent.pdb'
+    test_file = path+'/complex.1.pdb'
     print(test_file)
 #    
 #    '''
 #    atom dataframe generator:
 #    '''
-    l =[]
-    with open(test_file, 'r') as f:
-        for line in f:
-            if line.startswith('ATOM'):
-                clean_line = (line.rstrip()).split()
-                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
-                if len(clean_line) == 11:
-                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
-                    split = [clean_line[-2][:4], clean_line[-2][4:]]
-                    clean_line[-2] = split[1]
-                    clean_line.insert(-2, split[0])
-                #check if coordinate data collumns are collided (most likely happens between x and y coor)
-                if len(clean_line[6])>=13:
-                    split = [clean_line[6][:-8], clean_line[6][-8:]]
-                    last_elem = clean_line.pop()
-                    clean_line[-1] = last_elem
-                    clean_line.insert(6, split[0])
-                    clean_line[7] = split[1]
-                if len(clean_line[7])>=13:
-                    split = [clean_line[7][:-8], clean_line[7][-8:]]
-                    last_elem = clean_line.pop()
-                    clean_line[-1] = last_elem
-                    clean_line.insert(7, split[0])
-                    clean_line[8] = split[1]
-                l.append(clean_line)
-            elif line.startswith('TER'):
-                clean_line = (line.rstrip()).split()
-                l.append(clean_line)
-            elif line.startswith('ENDMDL'):
-                break
-    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 2:'atom_name', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
-    for i in range(len(l)):
-        print(i, l[i])
+#    l =[]
+#    with open(test_file, 'r') as f:
+#        for line in f:
+#            if line.startswith('ATOM'):
+#                clean_line = (line.rstrip()).split()
+#                #check for alignment mistakes within data, a row with spacing alignment error has 11 length after splitted by whitespace
+#                if len(clean_line) == 11:
+#                    #split the 2nd last column by the 4th index (this inference is according to PDB file formatting)
+#                    split = [clean_line[-2][:4], clean_line[-2][4:]]
+#                    clean_line[-2] = split[1]
+#                    clean_line.insert(-2, split[0])
+#                #check if coordinate data collumns are collided (most likely happens between x and y coor)
+#                if len(clean_line[6])>=13:
+#                    split = [clean_line[6][:-8], clean_line[6][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(6, split[0])
+#                    clean_line[7] = split[1]
+#                if len(clean_line[7])>=13:
+#                    split = [clean_line[7][:-8], clean_line[7][-8:]]
+#                    last_elem = clean_line.pop()
+#                    clean_line[-1] = last_elem
+#                    clean_line.insert(7, split[0])
+#                    clean_line[8] = split[1]
+#                l.append(clean_line)
+#            elif line.startswith('TER'):
+#                clean_line = (line.rstrip()).split()
+#                l.append(clean_line)
+#            elif line.startswith('ENDMDL'):
+#                break
+#    df_atoms = (pd.DataFrame(l)).rename(columns={0:'record', 2:'atom_name', 6:'x_coor', 7:'y_coor', 8:'z_coor', 11:'atom_type'})
+
+#    for i in range(len(l)):
+#        print(i, l[i])
         
 
-    print(df_atoms)
+#    print(df_atoms)
 #    
 #    '''
 #    split dataframes based on chains ended by "TER"
@@ -374,6 +377,40 @@ if __name__ == '__main__':
 #    print(l_df)
 #    
 #    print(df_atoms.iloc[293])
+    
+    
+    
+    from biopandas.pdb import PandasPdb
+    
+    idxes = []
+    idx = 0
+    with open(test_file, 'r') as f:
+        for line in f:
+            if line.startswith('TER'):
+                idxes.append(idx)
+            idx+=1
+    print(idxes)
+    
+    ppdb = PandasPdb()
+    ppdb.read_pdb(test_file)
+    df_atoms = ppdb.df["ATOM"].set_index(["line_idx"])
+    
+    print(df_atoms.keys())
+    print(df_atoms['atom_name'])
+#    
+#    '''
+#    split dataframes based on chains ended by "TER"
+#    '''
+#    l_df = []
+#    last_idx = 0
+#    for idx in idxes:
+#        subset_df = df_atoms.loc[last_idx:idx]
+#        l_df.append(subset_df)
+#        last_idx = idx+1
+#    
+#    print(l_df[0].loc[600])
+        
+    
     '''
     multiprocessing unit test
     '''
@@ -415,77 +452,77 @@ if __name__ == '__main__':
 #    print('time elapsed =',end_time-start_time,'seconds')
 
 
-    '''
-    data processing & writing
-    '''
-    #initialize parameters
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
-    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    #print(complex_files)
-    
-    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
-    cutoff = 12
-    complexes = complex_files[::-1]
-    filename = "dataset.pkl"
-    
-    #start of the process
-    start_time = time.time()
-    pool = multiprocessing.Pool()
-    
-    #y_data loader
-    df_y = y_data_processor('C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018')
-
-    #check if id is already existed within file, if yes, skip it
-    data = []
-    try:
-        with open(filename, 'rb') as fr:
-            print(filename, 'is found')
-            try:
-                while True:
-                    data.append(pickle.load(fr))
-            except EOFError:
-                pass            
-    except FileNotFoundError:
-        print('File is not found')
-    saved_ids = [d['id'] for d in data]
-
-    #process and save the data
-    try:
-        i=0
-        for id_file in complexes:
-            if id_file in saved_ids:
-                continue
-            else:
-                print("start of process for ID :",id_file)
-                vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
-                y = df_y.loc[df_y['id']==id_file.split('.')[0]]['log_y'].values[0]
-                vector["y"]=y
-                print("ID : ", id_file)
-                print('value of x vector (R^N) = ', vector)
-                with open(filename, 'ab') as f:
-                    pickle.dump(vector, f)
-                i+=1
-    except KeyboardInterrupt:
-        print('interrupted !!')
-    
-    end_time = time.time()
-    print("the number of protein processed in current run = ",i)
-    print('time elapsed =',end_time-start_time,'seconds')
-            
-    
-    '''
-    data checker
-    '''
-    data = []
-    try:
-        with open(filename, 'rb') as fr:
-            try:
-                while True:
-                    data.append(pickle.load(fr))
-            except EOFError:
-                pass            
-    except FileNotFoundError:
-        print('File is not found')
-    saved_ids = [d['id'] for d in data]
-    print('processed protein IDs = ',saved_ids, print(len(saved_ids)))
+#    '''
+#    data processing & writing
+#    '''
+#    #initialize parameters
+#    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
+#    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+#    #print(complex_files)
+#    
+#    atom_types = ['C','N','O','F','P','S','Cl','Br','I']
+#    cutoff = 12
+#    complexes = complex_files[::-1]
+#    filename = "dataset.pkl"
+#    
+#    #start of the process
+#    start_time = time.time()
+#    pool = multiprocessing.Pool()
+#    
+#    #y_data loader
+#    df_y = y_data_processor('C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP/index/INDEX_general_PP.2018')
+#
+#    #check if id is already existed within file, if yes, skip it
+#    data = []
+#    try:
+#        with open(filename, 'rb') as fr:
+#            print(filename, 'is found')
+#            try:
+#                while True:
+#                    data.append(pickle.load(fr))
+#            except EOFError:
+#                pass            
+#    except FileNotFoundError:
+#        print('File is not found')
+#    saved_ids = [d['id'] for d in data]
+#
+#    #process and save the data
+#    try:
+#        i=0
+#        for id_file in complexes:
+#            if id_file in saved_ids:
+#                continue
+#            else:
+#                print("start of process for ID :",id_file)
+#                vector = data_multi_processing(path, id_file, atom_types, cutoff, pool)
+#                y = df_y.loc[df_y['id']==id_file.split('.')[0]]['log_y'].values[0]
+#                vector["y"]=y
+#                print("ID : ", id_file)
+#                print('value of x vector (R^N) = ', vector)
+#                with open(filename, 'ab') as f:
+#                    pickle.dump(vector, f)
+#                i+=1
+#    except KeyboardInterrupt:
+#        print('interrupted !!')
+#    
+#    end_time = time.time()
+#    print("the number of protein processed in current run = ",i)
+#    print('time elapsed =',end_time-start_time,'seconds')
+#            
+#    
+#    '''
+#    data checker
+#    '''
+#    data = []
+#    try:
+#        with open(filename, 'rb') as fr:
+#            try:
+#                while True:
+#                    data.append(pickle.load(fr))
+#            except EOFError:
+#                pass            
+#    except FileNotFoundError:
+#        print('File is not found')
+#    saved_ids = [d['id'] for d in data]
+#    print('processed protein IDs = ',saved_ids, print(len(saved_ids)))
     
