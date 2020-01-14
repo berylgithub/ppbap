@@ -84,20 +84,21 @@ def loader_zdock(filepath):
 
 
 if __name__ == '__main__':
-#    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Dataset/PP'
-    path = 'C:/Users/beryl/Documents/Computational Science/Kanazawa/Thesis/Outputs/PC-PC/top_preds'
-    
-    complex_files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-    
+    import json
+
+    with open('config.json') as json_data_file:
+        conf = json.load(json_data_file)
+    path = conf['root']['PP']
+    y_path = conf['index']['PP']
+
+    complex_files = list_files(path) 
 #    test_file = path+'/'+complex_files[2]
-#    test_file = path+'/1nez.ent.pdb'
-    test_file = path+'/complex.1.pdb'
+    test_file = path+'/1nez.ent.pdb'
+#    test_file = path+'/complex.1.pdb'
     
-    df_atoms = load_custom_pdb(test_file)
-    terminal_idxes = get_chain_terminals(test_file)
-    chains = get_sliced_chains(df_atoms, terminal_idxes, zdock=True)
-    
-#    new_chain = chains[0].set_index(["residue_name"])
-    chains = loader_zdock(test_file)
-    print(chains)
+#    df_atoms = load_custom_pdb(test_file)
+#    terminal_idxes = get_chain_terminals(test_file)
+#    chains = get_sliced_chains(df_atoms, terminal_idxes, zdock=False)
+    chains = loader_pdbbind(test_file)
+    print(chains[0].T)
     
