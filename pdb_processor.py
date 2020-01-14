@@ -23,7 +23,7 @@ def load_custom_pdb(filepath):
     get the 'ATOM' key and set the line index as default index
     '''
     ppdb = PandasPdb()
-    ppdb.read_pdb(test_file)
+    ppdb.read_pdb(filepath)
     df_atoms = ppdb.df["ATOM"].set_index(["line_idx"])
     return df_atoms
     
@@ -33,7 +33,7 @@ def get_chain_terminals(filepath):
     """
     idxes = []
     idx = 0
-    with open(test_file, 'r') as f:
+    with open(filepath, 'r') as f:
         for line in f:
             if line.startswith('TER'):
                 idxes.append(idx)
