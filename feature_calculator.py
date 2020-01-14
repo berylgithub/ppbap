@@ -80,6 +80,7 @@ def f_proteins_interaction(df_protein_A, df_protein_B, atom_types, cutoff):
                     #calculate the euclidean distance and heaviside step value:
                     sum_interaction += f_h_step(x=f_euclid_dist(a_coord, b_coord), a=cutoff) 
             x_vector[idx] = sum_interaction
+            print(x_vector)
             idx+=1
     return x_vector
 
@@ -185,6 +186,7 @@ def f_proteins_interaction_mp(df_protein_A, df_protein_B, atom_types, cutoff, po
             sum_interaction = np.sum(heavisides)
             x_vector[idx] = sum_interaction
             idx+=1
+            print(x_vector)
     return x_vector
 
 def x_atom_dist_mp(params):
@@ -250,6 +252,7 @@ def x_hydrophobic_acid_mp(params):
 #            heavisides = np.array(list(map(f_heaviside_mp, paramlist)))
             sum_interactions += np.sum(heavisides)
             x_vector[patch_idx] = sum_interactions
+            print("ha: ",x_vector)
         patch_idx+=1
     return {'id':id_name, 'h_a_vector':x_vector}
 
@@ -259,7 +262,7 @@ def x_processor_mp(params):
     atom_types = params[2]
     cutoff = params[3]
     pool = params[4]
-    x_dict = x_atom_dist([chains, id_name, atom_types, cutoff, pool])
-    ha_dict = x_hydrophobic_acid([chains, id_name, cutoff, pool])
+    x_dict = x_atom_dist_mp([chains, id_name, atom_types, cutoff, pool])
+    ha_dict = x_hydrophobic_acid_mp([chains, id_name, cutoff, pool])
     x_dict['x_vector'] = np.concatenate((x_dict['x_vector'], ha_dict["h_a_vector"]))
     return x_dict
