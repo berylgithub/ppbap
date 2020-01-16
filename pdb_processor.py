@@ -37,6 +37,8 @@ def get_chain_terminals(filepath):
         for line in f:
             if line.startswith('TER'):
                 idxes.append(idx)
+            elif line.startswith('ENDMDL'):
+                break
             idx+=1
     return idxes
     
@@ -93,12 +95,12 @@ if __name__ == '__main__':
 
     complex_files = list_files(path) 
 #    test_file = path+'/'+complex_files[2]
-    test_file = path+'/1nez.ent.pdb'
+    test_file = path+'/2wy2.ent.pdb'
 #    test_file = path+'/complex.1.pdb'
     
 #    df_atoms = load_custom_pdb(test_file)
 #    terminal_idxes = get_chain_terminals(test_file)
 #    chains = get_sliced_chains(df_atoms, terminal_idxes, zdock=False)
     chains = loader_pdbbind(test_file)
-    print(chains[0].T)
+    print(chains, len(chains))
     
